@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verifica Compatibilità Veicoli</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <script>
+        const translations = {
+            it: {
+                title: "Verifica Compatibilità Veicoli",
+                uploadFile: "Carica il file dei veicoli da verificare:",
+                verifyButton: "Verifica Compatibilità",
+                fileSuccess: "File caricato con successo!",
+                checkComplete: "Compatibilità verificata e file scaricato!",
+                compatibility: "Riscontro",
+                ok: "Riscontro OK",
+                ko: "KO",
+                matches: "Numero di Riscontri",
+                harnessInfo: "Dati per Installazione Professionale",
+                targa: "Targa",
+                tipologia: "Tipologia",
+            },
+            en: {
+                title: "Vehicle Compatibility Check",
+                uploadFile: "Upload the file of vehicles to check:",
+                verifyButton: "Check Compatibility",
+                fileSuccess: "File uploaded successfully!",
+                checkComplete: "Compatibility verified and file downloaded!",
+                compatibility: "Result",
+                ok: "Match OK",
+                ko: "No Match",
+                matches: "Number of Matches",
+                harnessInfo: "Data for Professional Installation",
+                targa: "License Plate",
+                tipologia: "Type",
+            },
+        };
+
+        let currentLanguage = "it"; // Lingua predefinita
+
+        function changeLanguage() {
+            const language = document.getElementById("language").value;
+            currentLanguage = language;
+
+            const title = document.querySelector("h1");
+            const labelFile = document.querySelector("label[for='file']");
+            const button = document.querySelector("button");
+            const paragraphs = document.querySelectorAll("p");
+
+            if (title) title.textContent = translations[language].title;
+            if (labelFile) labelFile.textContent = translations[language].uploadFile;
+            if (button) button.textContent = translations[language].verifyButton;
+
+            if (paragraphs.length > 0) {
+                paragraphs[0].textContent = translations[language].fileSuccess;
+                paragraphs[1].textContent = translations[language].uploadFile;
+                paragraphs[2].textContent = translations[language].checkComplete;
+            }
+        }
+
+        let datiVeicoli = [];
+        let datiDaVerificare = [];
+
+        // Mostra o nasconde le categorie in base alla selezione di "Soluzione Tachigrafo"
+        document.addEventListener("DOMContentLoaded", function () {
+            document.getElementById('tachographSolution').addEventListener('change', function () {
+                const categorySelection = document.getElementById('categorySelection');
+                if (this.checked) {
+                    categorySelection.style.display = 'block';
+                } else {
+                    categorySelection.style.display = 'none';
+                }
+            });
+            document.getElementById('driverIdentificationSolution').addEventListener('change', function () {
+    const driverCategorySelection = document.getElementById('driverCategorySelection');
+    if (this.checked) {
+        driverCategorySelection.style.display = 'block';
+    } else {
+        driverCategorySelection.style.display = 'none';
+    }
+});
+document.getElementById('engineLockSolution').addEventListener('change', function () {
+    const engineLockCategorySelection = document.getElementById('engineLockCategorySelection');
+    if (this.checked) {
+        engineLockCategorySelection.style.display = 'block';
+    } else {
+        engineLockCategorySelection.style.display = 'none';
+    }
+});
+
+        });
+
+        async function caricaFilePrincipale() {
+            const response = await fetch('Geotab (EU) Vehicle and Harness Register [PUBLIC].xlsx');
+            const arrayBuffer = await response.arrayBuffer();
+
+            const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+
+            const carsSheet = XLSX.utils.sheet_to_json(workbook.Sheets['Cars, SUVs & Vans']);
+            const trucksSheet = XLSX.utils.sheet_to_json(workbook.Sheets['Truck & Bus']);
+
+            datiVeicoli = [...carsSheet, ...trucksSheet];
+        }
+
+        function caricaFileVerifica(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function (e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+
+                datiDaVerificare = XLSX.utils.sheet_to_json(sheet);
+
+                alert(translations[currentLanguage].fileSuccess);
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        function verificaCompatibilita() {
+    if (datiVeicoli.length === 0 || datiDaVerificare.length === 0) {
+        alert('Devi caricare sia il file principale che il file da verificare!');
+        return;
+    }
+
+    const oggi = new Date().getFullYear();
+    const risultati = [];
+
+    // Verifica se "Soluzione Tachigrafo" è selezionata
+    const isTachographSelected = document.getElementById('tachographSolution').checked;
+
+    // Verifica se "Driver Identification Solution" è selezionata
+    const isDriverIdentificationSelected = document.getElementById('driverIdentificationSolution').checked;
+
+    // Verifica se "Engine Lock Solution" è selezionata
+    const isEngineLockSelected = document.getElementById('engineLockSolution').checked;
+
+    // Recupera le categorie selezionate
+    const tachographCategories = Array.from(document.querySelectorAll('.categoryCheckbox:checked'))
+        .map(cb => cb.value.toLowerCase());
+
+    const driverCategories = Array.from(document.querySelectorAll('.driverCategoryCheckbox:checked'))
+        .map(cb => cb.value.toLowerCase());
+
+    const engineLockCategories = Array.from(document.querySelectorAll('.engineLockCategoryCheckbox:checked'))
+        .map(cb => cb.value.toLowerCase());
+
+    datiDaVerificare.forEach(veicolo => {
+        const manufacturer = veicolo.Manufacturer?.toString().trim().toLowerCase();
+        const modelName = veicolo['Model Name']?.toString().trim().toLowerCase();
+        const year = parseInt(veicolo.Year, 10);
+        const tipologia = veicolo['Tipologia']?.toString().trim().toLowerCase() || 'N/A';
+
+        let compatibility = 'KO';
+        let numMatches = 0;
+        let harnessInfo = '';
+        let ioxUReader = '';
+        let hrnUrTacho = '';
+        let ioxNfcReader = '';
+        let driverTag = '';
+        let sprRelayKit = '';
+
+        // Controlla corrispondenza nel file principale
+        const matches = datiVeicoli.filter(entry => {
+            const entryManufacturer = entry.Manufacturer?.toString().trim().toLowerCase();
+            const entryModel = entry['Model Name']?.toString().trim().toLowerCase();
+            const startYear = parseInt(entry['Production Start'], 10);
+
+            let endYear = entry['Production End'];
+            if (typeof endYear === 'string' && endYear.toLowerCase() === 'present') {
+                endYear = oggi;
+            } else {
+                endYear = parseInt(endYear, 10);
+            }
+
+            return (
+                entryManufacturer === manufacturer &&
+                entryModel === modelName &&
+                year >= startYear &&
+                year <= endYear
+            );
+        });
+
+        if (matches.length > 0) {
+            compatibility = 'Riscontro OK';
+            numMatches = matches.length;
+            harnessInfo = matches
+                .map(match => match['Harness\nrequired for Professional Installation'] || 'N/A')
+                .filter((value, index, self) => self.indexOf(value) === index) // Rimuove duplicati
+                .join(' or ');
+        }
+
+        // Controlla se la Tipologia corrisponde a una categoria per Tachigrafo
+        const isTachographMatch = tachographCategories.some(category => {
+            if (category === 'motrice') {
+                return tipologia === 'motrice' || tipologia === 'trattore';
+            }
+            return tipologia === category;
+        });
+
+        // Controlla se la Tipologia corrisponde a una categoria per Driver Identification
+        const isDriverMatch = driverCategories.some(category => {
+            if (category === 'motrice') {
+                return tipologia === 'motrice' || tipologia === 'trattore';
+            }
+            return tipologia === category;
+        });
+
+        // Controlla se la Tipologia corrisponde a una categoria per Engine Lock
+        const isEngineLockMatch = engineLockCategories.some(category => {
+            if (category === 'motrice') {
+                return tipologia === 'motrice' || tipologia === 'trattore';
+            }
+            return tipologia === category;
+        });
+
+        // Assegna valori per Tachigrafo
+        if (isTachographSelected && isTachographMatch) {
+            ioxUReader = 1;
+            hrnUrTacho = 1;
+        }
+
+        // Assegna valori per Driver Identification
+        if (isDriverIdentificationSelected && isDriverMatch) {
+            ioxNfcReader = 1;
+            driverTag = 1;
+        }
+
+        // Assegna valori per Engine Lock
+        if (isEngineLockSelected && isEngineLockMatch) {
+            sprRelayKit = 1;
+        }
+
+        risultati.push({
+            ...veicolo,
+            Compatibility: compatibility,
+            'Number of Matches': numMatches,
+            'Harness required for Professional Installation': harnessInfo,
+            'IOX-UREADER': ioxUReader,
+            'HRN-URTACHO': hrnUrTacho,
+            'IOX-NFCREADER': ioxNfcReader,
+            'Driver TAG': driverTag,
+            'SPR-RELAYKIT': sprRelayKit,
+        });
+    });
+
+    scaricaFileRisultati(risultati);
+}
+
+
+
+
+        function scaricaFileRisultati(dati) {
+            const worksheet = XLSX.utils.json_to_sheet(dati);
+            const workbook = XLSX.utils.book_new();
+
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Risultati');
+            XLSX.writeFile(workbook, 'Risultati_Compatibilita.xlsx');
+        }
+    </script>
+</head>
+<body onload="caricaFilePrincipale()">
+    <div class="language-switcher">
+        <label for="language">Lingua / Language:</label>
+        <select id="language" onchange="changeLanguage()">
+            <option value="it">Italiano</option>
+            <option value="en">English</option>
+        </select>
+    </div>
+    <h1>Verifica Compatibilità Veicoli</h1>
+    <p>1. Il file principale viene caricato automaticamente all'avvio.</p>
+    <p>2. Carica il file dei veicoli da verificare:</p>
+    <div class="file-upload-wrapper">
+        <label class="file-upload-button" for="fileInput">Scegli File</label>
+        <input id="fileInput" type="file" accept=".xlsx" onchange="caricaFileVerifica(event)">
+    </div>
+        
+    <div>
+        <label>
+            <input type="checkbox" id="tachographSolution">
+            Soluzione Tachigrafo
+        </label>
+        <div id="categorySelection" style="margin-left: 20px; display: none;">
+            <label>
+                <input type="checkbox" class="categoryCheckbox" value="motrice">
+                Motrice (incluso Trattore)
+            </label><br>
+            <label>
+                <input type="checkbox" class="categoryCheckbox" value="veicolo">
+                Veicolo
+            </label><br>
+            <label>
+                <input type="checkbox" class="categoryCheckbox" value="furgone">
+                Furgone
+            </label>
+        </div>
+    </div>  
+    <div>
+        <label>
+            <input type="checkbox" id="driverIdentificationSolution">
+            Driver Identification Standalone (With Driver Tag)
+        </label>
+        <div id="driverCategorySelection" style="margin-left: 20px; display: none;">
+            <label>
+                <input type="checkbox" class="driverCategoryCheckbox" value="motrice">
+                Motrice (incluso Trattore)
+            </label><br>
+            <label>
+                <input type="checkbox" class="driverCategoryCheckbox" value="veicolo">
+                Veicolo
+            </label><br>
+            <label>
+                <input type="checkbox" class="driverCategoryCheckbox" value="furgone">
+                Furgone
+            </label>
+        </div>
+    </div>
+    <div>
+        <label>
+            <input type="checkbox" id="engineLockSolution">
+            Driver Identification (With Driver Tag) + Engine Lock (è necessario fleggare anche STANDALONE)
+        </label>
+        <div id="engineLockCategorySelection" style="margin-left: 20px; display: none;">
+            <label>
+                <input type="checkbox" class="engineLockCategoryCheckbox" value="motrice">
+                Motrice (incluso Trattore)
+            </label><br>
+            <label>
+                <input type="checkbox" class="engineLockCategoryCheckbox" value="veicolo">
+                Veicolo
+            </label><br>
+            <label>
+                <input type="checkbox" class="engineLockCategoryCheckbox" value="furgone">
+                Furgone
+            </label>
+        </div>
+    </div>      
+    <button onclick="verificaCompatibilita()">Verifica Compatibilità</button>
+    <p>Dopo la verifica, il file dei risultati sarà scaricato automaticamente.</p>
+</body>
+</html>

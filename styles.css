@@ -1,0 +1,150 @@
+/* Generale */
+body {
+    font-family: 'Roboto', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f9f9f9;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* Titolo */
+h1 {
+    text-align: center;
+    margin-top: 20px;
+    color: #E60000; /* Rosso Vodafone */
+    font-size: 2rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* Contenitore */
+.container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 20px;
+    background: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    border: 1px solid #ddd;
+}
+
+/* Pulsanti */
+button {
+    display: block;
+    width: 60%; /* Ridotta la larghezza */
+    margin: 20px auto; /* Centrato */
+    padding: 12px;
+    background: linear-gradient(90deg, #E60000, #B00000); /* Rosso Vodafone */
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+button:hover {
+    background: linear-gradient(90deg, #B00000, #E60000);
+}
+
+/* Pulsante personalizzato "Scegli file" */
+/* Pulsante personalizzato "Scegli file" - Rosso Vodafone */
+.file-upload-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+    margin: 15px 0;
+}
+
+.file-upload-wrapper input[type="file"] {
+    opacity: 0;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+}
+
+.file-upload-button {
+    display: inline-block;
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(90deg, #E60000, #B00000); /* Rosso Vodafone */
+    color: #fff;
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.file-upload-button:hover {
+    background: linear-gradient(90deg, #B00000, #E60000); /* Effetto hover */
+}
+
+
+/* Checkbox e label */
+div > label {
+    display: block;
+    font-size: 1rem;
+    margin: 10px 0;
+    color: #555;
+    cursor: pointer;
+}
+
+input[type="checkbox"] {
+    margin-right: 10px;
+    transform: scale(1.2);
+    vertical-align: middle;
+}
+
+/* Selettore della lingua */
+.language-switcher {
+    text-align: right;
+    padding: 10px 20px;
+    background: #E60000; /* Rosso Vodafone */
+    color: #fff;
+    border-bottom: 4px solid #B00000;
+}
+
+.language-switcher select {
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 5px;
+    border-radius: 5px;
+    font-size: 1rem;
+    color: #333;
+}
+
+/* Testo */
+p {
+    text-align: center;
+    font-size: 1rem;
+    color: #777;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+
+    button {
+        font-size: 1rem;
+        padding: 10px;
+        width: 80%; /* Ridotta ancora di più su dispositivi piccoli */
+    }
+
+    h1 {
+        font-size: 1.8rem;
+    }
+
+    p {
+        font-size: 0.9rem;
+    }
+}
