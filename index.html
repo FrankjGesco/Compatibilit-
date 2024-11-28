@@ -166,33 +166,42 @@ document.getElementById('engineLockSolution').addEventListener('change', functio
 
         // Controlla corrispondenza nel file principale
         const matches = datiVeicoli.filter(entry => {
-            const entryManufacturer = entry.Manufacturer?.toString().trim().toLowerCase();
-            const entryModel = entry['Model Name']?.toString().trim().toLowerCase();
-            const startYear = parseInt(entry['Production Start'], 10);
+    const entryManufacturer = entry.Manufacturer?.toString().trim().toLowerCase();
+    const entryModel = entry['Model Name']?.toString().trim().toLowerCase();
+    const startYear = parseInt(entry['Production Start'], 10);
 
-            let endYear = entry['Production End'];
-            if (typeof endYear === 'string' && endYear.toLowerCase() === 'present') {
-                endYear = oggi;
-            } else {
-                endYear = parseInt(endYear, 10);
-            }
+    let endYear = entry['Production End'];
+    if (typeof endYear === 'string' && endYear.toLowerCase() === 'present') {
+        endYear = oggi;
+    } else {
+        endYear = parseInt(endYear, 10);
+    }
 
-            return (
-                entryManufacturer === manufacturer &&
-                entryModel === modelName &&
-                year >= startYear &&
-                year <= endYear
-            );
-        });
+    return (
+        entryManufacturer === manufacturer &&
+        (entryModel.includes(modelName) || modelName.includes(entryModel)) && // Ricerca "Contiene"
+        year >= startYear &&
+        year <= endYear
+    );
+});
+
 
         if (matches.length > 0) {
-            compatibility = 'Riscontro OK';
-            numMatches = matches.length;
-            harnessInfo = matches
-                .map(match => match['Harness\nrequired for Professional Installation'] || 'N/A')
-                .filter((value, index, self) => self.indexOf(value) === index) // Rimuove duplicati
-                .join(' or ');
-        }
+    numMatches = matches.length;
+
+    // Aggiungi i dettagli di marca e modello per i veicoli compatibili
+    const matchDetails = matches
+        .map(match => `${match.Manufacturer} ${match['Model Name']}`)
+        .join(', ');
+
+    compatibility = `Riscontro OK (${matchDetails})`;
+
+    harnessInfo = matches
+        .map(match => match['Harness\nrequired for Professional Installation'] || 'N/A')
+        .filter((value, index, self) => self.indexOf(value) === index) // Rimuove duplicati
+        .join(' or ');
+}
+
 
         // Controlla se la Tipologia corrisponde a una categoria per Tachigrafo
         const isTachographMatch = tachographCategories.some(category => {
