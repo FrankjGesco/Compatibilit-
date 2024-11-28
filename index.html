@@ -120,22 +120,6 @@ document.getElementById('engineLockSolution').addEventListener('change', functio
 
             reader.readAsArrayBuffer(file);
         }
-        // Similarità >80%
-
-        function similarity(a, b) {
-            if (!a || !b) {
-        return 0; // Se uno dei valori è nullo o undefined, la similarità è 0
-    }
-    const longer = a.length > b.length ? a : b;
-    const shorter = a.length > b.length ? b : a;
-    const longerLength = longer.length;
-
-    if (longerLength === 0) {
-        return 1.0; // Identico
-    }
-
-    return (longerLength - levenshteinDistance(longer, shorter)) / longerLength;
-}
 
 function levenshteinDistance(a, b) {
     const matrix = Array(a.length + 1).fill(null).map(() => Array(b.length + 1).fill(null));
@@ -207,8 +191,7 @@ function levenshteinDistance(a, b) {
         let sprRelayKit = '';
 
         // Controlla corrispondenza nel file principale
-        const threshold = 0.8; // Imposta una soglia di similarità del 80%
-const matches = datiVeicoli.filter(entry => {
+    const matches = datiVeicoli.filter(entry => {
     const entryManufacturer = entry.Manufacturer?.toString().trim().toLowerCase();
     const entryModel = entry['Model Name']?.toString().trim().toLowerCase();
     const startYear = parseInt(entry['Production Start'], 10);
@@ -220,12 +203,12 @@ const matches = datiVeicoli.filter(entry => {
         endYear = parseInt(endYear, 10);
     }
 
-    const manufacturerMatch = entryManufacturer === manufacturer;
-    const modelNameMatch = entryModel && modelName && similarity(entryModel, modelName) >= threshold; // Similarità Percentuale
+    const manufacturerMatch = manufacturer && entryManufacturer && entryManufacturer.includes(manufacturer);
+    const modelNameMatch = modelName && entryModel && (entryModel.includes(modelName) || modelName.includes(entryModel));
 
     return (
         manufacturerMatch &&
-        modelNameMatch && // Confronto più flessibile
+        modelNameMatch &&
         year >= startYear &&
         year <= endYear
     );
