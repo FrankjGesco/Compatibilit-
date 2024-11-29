@@ -21,6 +21,7 @@
                 harnessInfo: "Dati per Installazione Professionale",
                 targa: "Targa",
                 tipologia: "Tipologia",
+                clientName: "Nome Cliente",
             },
             en: {
                 title: "Vehicle Compatibility Check",
@@ -35,6 +36,7 @@
                 harnessInfo: "Data for Professional Installation",
                 targa: "License Plate",
                 tipologia: "Type",
+                clientName: "Customer Name"
             },
         };
 
@@ -48,10 +50,13 @@
             const labelFile = document.querySelector("label[for='file']");
             const button = document.querySelector("button");
             const paragraphs = document.querySelectorAll("p");
+            const labelClientName = document.getElementById("client-name-label"); // Etichetta Nome Cliente
+
 
             if (title) title.textContent = translations[language].title;
             if (labelFile) labelFile.textContent = translations[language].uploadFile;
             if (button) button.textContent = translations[language].verifyButton;
+            if (labelClientName) labelClientName.textContent = translations[language].clientName; // Traduci Nome Cliente
 
             if (paragraphs.length > 0) {
                 paragraphs[0].textContent = translations[language].fileSuccess;
@@ -103,6 +108,7 @@ document.getElementById('engineLockSolution').addEventListener('change', functio
 
             datiVeicoli = [...carsSheet, ...trucksSheet];
         }
+
 
         function caricaFileVerifica(event) {
             const file = event.target.files[0];
@@ -189,6 +195,7 @@ function levenshteinDistance(a, b) {
         let ioxNfcReader = '';
         let driverTag = '';
         let sprRelayKit = '';
+        let installationNotes = '';
 
         // Controlla corrispondenza nel file principale
     const matches = datiVeicoli.filter(entry => {
@@ -230,7 +237,10 @@ function levenshteinDistance(a, b) {
         .map(match => match['Harness\nrequired for Professional Installation'] || 'N/A')
         .filter((value, index, self) => self.indexOf(value) === index) // Rimuove duplicati
         .join(' or ');
-}
+        installationNotes = matches
+    .map(match => match['Installation Notes \n& \nSpecial Requirements'] || '')
+    .filter((value, index, self) => self.indexOf(value) === index) // Filtra duplicati
+    .join(' or ');}
 
 
         // Controlla se la Tipologia corrisponde a una categoria per Tachigrafo
@@ -279,6 +289,7 @@ function levenshteinDistance(a, b) {
             Compatibility: compatibility,
             'Number of Matches': numMatches,
             'Harness required for Professional Installation': harnessInfo,
+            'Installation Notes \n& \nSpecial Requirements': installationNotes,
             'IOX-UREADER': ioxUReader,
             'HRN-URTACHO': hrnUrTacho,
             'IOX-NFCREADER': ioxNfcReader,
@@ -293,7 +304,7 @@ function levenshteinDistance(a, b) {
 
 
 
-        function scaricaFileRisultati(dati) {
+function scaricaFileRisultati(dati) {
             const worksheet = XLSX.utils.json_to_sheet(dati);
             const workbook = XLSX.utils.book_new();
 
@@ -381,11 +392,11 @@ function levenshteinDistance(a, b) {
                 Furgone
             </label>
         </div>
-    </div>  
+    </div> 
     <div>
-        <label for="client-name">Nome Cliente:</label>
+        <label for="client-name" id="client-name-label">Nome Cliente:</label>
         <input type="text" id="client-name" placeholder="Inserisci il nome del cliente">
-    </div>    
+    </div>     
     <button onclick="verificaCompatibilita()">Verifica Compatibilità</button>
     <p>Dopo la verifica, il file dei risultati sarà scaricato automaticamente.</p>
 </body>
