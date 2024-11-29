@@ -298,7 +298,11 @@ function levenshteinDistance(a, b) {
             const workbook = XLSX.utils.book_new();
 
             XLSX.utils.book_append_sheet(workbook, worksheet, 'Risultati');
-            XLSX.writeFile(workbook, 'Risultati_Compatibilita.xlsx');
+            // Recupera il nome del cliente dall'input
+    const clientName = document.getElementById('client-name').value.trim();
+    const fileName = clientName ? `Compatibility_${clientName}.xlsx` : 'Compatibility_customername.xlsx';
+    console.log(`Scarico il file con nome: ${fileName}`); // DEBUG       
+    XLSX.writeFile(workbook, fileName);
         }
     </script>
 </head>
@@ -377,7 +381,11 @@ function levenshteinDistance(a, b) {
                 Furgone
             </label>
         </div>
-    </div>      
+    </div>  
+    <div>
+        <label for="client-name">Nome Cliente:</label>
+        <input type="text" id="client-name" placeholder="Inserisci il nome del cliente">
+    </div>    
     <button onclick="verificaCompatibilita()">Verifica Compatibilità</button>
     <p>Dopo la verifica, il file dei risultati sarà scaricato automaticamente.</p>
 </body>

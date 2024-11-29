@@ -53,9 +53,10 @@ button:hover {
 /* Pulsante personalizzato "Scegli file" - Rosso Vodafone */
 .file-upload-wrapper {
     position: relative;
-    display: inline-block;
-    width: 100%;
-    margin: 15px 0;
+    display: block;
+    width: 50%;
+    margin: 15px auto;
+    
 }
 
 .file-upload-wrapper input[type="file"] {
@@ -147,4 +148,21 @@ p {
     p {
         font-size: 0.9rem;
     }
+}
+/* Stile per il campo "Nome Cliente" */
+#client-name {
+    width: 50%;
+    padding: 10px;
+    margin: 10px 0 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+#client-name:focus {
+    outline: none;
+    border-color: #E60000;
+    box-shadow: 0 4px 8px rgba(230, 0, 0, 0.4);
 }
