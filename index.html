@@ -305,6 +305,29 @@ function levenshteinDistance(a, b) {
 
 
 function scaricaFileRisultati(dati) {
+    const colonneOutput = [
+        'Manufacturer',
+        'Model Name',
+        'Year',
+        'Compatibility',
+        'Number of Matches',
+        'Harness required for Professional Installation',
+        'Installation Notes \n& \nSpecial Requirements',
+        'IOX-UREADER',
+        'HRN-URTACHO',
+        'IOX-NFCREADER',
+        'Driver TAG',
+        'SPR-RELAYKIT',
+    ];
+
+    // Crea un array con le colonne uniformate
+    const datiUniformati = dati.map(riga => {
+        const rigaUniformata = {};
+        colonneOutput.forEach(colonna => {
+            rigaUniformata[colonna] = riga[colonna] || '';
+        });
+        return rigaUniformata;
+    });
             const worksheet = XLSX.utils.json_to_sheet(dati);
             const workbook = XLSX.utils.book_new();
 
@@ -315,6 +338,96 @@ function scaricaFileRisultati(dati) {
     console.log(`Scarico il file con nome: ${fileName}`); // DEBUG       
     XLSX.writeFile(workbook, fileName);
         }
+        let veicoloIdCounter = 1; // Contatore per gli ID dei veicoli
+
+function aggiungiVeicolo() {
+    veicoloIdCounter++;
+
+    const vehicleInputs = document.getElementById('vehicleInputs');
+
+    const newRow = document.createElement('div');
+    newRow.className = 'vehicle-row';
+    newRow.innerHTML = `
+        <label for="make${veicoloIdCounter}">Marca:</label>
+        <input type="text" id="make${veicoloIdCounter}" placeholder="Inserisci Marca">
+        <label for="model${veicoloIdCounter}">Modello:</label>
+        <input type="text" id="model${veicoloIdCounter}" placeholder="Inserisci Modello">
+        <label for="year${veicoloIdCounter}">Anno:</label>
+        <input type="number" id="year${veicoloIdCounter}" placeholder="Inserisci Anno">
+        <button type="button" class="remove-row" onclick="rimuoviVeicolo(this)">-</button>
+    `;
+
+    vehicleInputs.appendChild(newRow);
+}
+
+function rimuoviVeicolo(button) {
+    const row = button.parentElement;
+    row.remove();
+}
+
+function verificaVeicoliSelezionati() {
+    const veicoliSelezionati = [];
+
+    for (let i = 1; i <= veicoloIdCounter; i++) {
+        const marca = document.getElementById(`make${i}`)?.value.trim().toLowerCase();
+        const modello = document.getElementById(`model${i}`)?.value.trim().toLowerCase();
+        const anno = parseInt(document.getElementById(`year${i}`)?.value, 10);
+
+        if (marca && modello && anno) {
+            veicoliSelezionati.push({ Manufacturer: marca, ModelName: modello, Year: anno });
+        }
+    }
+
+    if (veicoliSelezionati.length === 0) {
+        alert('Inserisci almeno un veicolo per la verifica.');
+        return;
+    }
+
+    const risultati = veicoliSelezionati.map(veicolo => {
+        const matches = datiVeicoli.filter(entry => {
+            const entryManufacturer = entry.Manufacturer?.toString().trim().toLowerCase();
+            const entryModel = entry['Model Name']?.toString().trim().toLowerCase();
+            const startYear = parseInt(entry['Production Start'], 10);
+            let endYear = entry['Production End'];
+            if (typeof endYear === 'string' && endYear.toLowerCase() === 'present') {
+                endYear = new Date().getFullYear();
+            } else {
+                endYear = parseInt(endYear, 10);
+            }
+
+            return (
+                entryManufacturer.includes(veicolo.Manufacturer) &&
+                (entryModel.includes(veicolo.ModelName) || veicolo.ModelName.includes(entryModel)) &&
+                veicolo.Year >= startYear &&
+                veicolo.Year <= endYear
+            );
+        });
+
+        return {
+            Manufacturer: veicolo.Manufacturer,
+            'Model Name': veicolo.ModelName,
+            Year: veicolo.Year,
+            Compatibility: matches.length > 0 ? 'OK' : 'KO',
+            'Number of Matches': matches.length,
+            'Harness required for Professional Installation': matches
+        .map(match => match['Harness\nrequired for Professional Installation'] || 'N/A')
+        .filter((value, index, self) => self.indexOf(value) === index) // Rimuove duplicati
+        .join(' or '),
+            'Installation Notes \n& \nSpecial Requirements': matches
+    .map(match => match['Installation Notes \n& \nSpecial Requirements'] || '')
+    .filter((value, index, self) => self.indexOf(value) === index) // Filtra duplicati
+    .join(' or '),
+            'IOX-UREADER': matches.some(m => m['IOX-UREADER']) ? 1 : "",
+            'HRN-URTACHO': matches.some(m => m['HRN-URTACHO']) ? 1 : "",
+            'IOX-NFCREADER': matches.some(m => m['IOX-NFCREADER']) ? 1 : "",
+            'Driver TAG': matches.some(m => m['Driver TAG']) ? 1 : "",
+            'SPR-RELAYKIT': matches.some(m => m['SPR-RELAYKIT']) ? 1 : "",
+        };
+    });
+
+    scaricaFileRisultati(risultati);
+}
+
     </script>
 </head>
 <body onload="caricaFilePrincipale()">
@@ -326,78 +439,98 @@ function scaricaFileRisultati(dati) {
         </select>
     </div>
     <h1>Verifica Compatibilità Veicoli</h1>
-    <p>1. Il file principale viene caricato automaticamente all'avvio.</p>
-    <p>2. Carica il file dei veicoli da verificare:</p>
-    <div class="file-upload-wrapper">
-        <label class="file-upload-button" for="fileInput">Scegli File</label>
-        <input id="fileInput" type="file" accept=".xlsx" onchange="caricaFileVerifica(event)">
-    </div>
-        
-    <div>
+    <div class="client-name-wrapper">
+        <label for="client-name" id="client-name-label">Nome Cliente:</label>
+        <input type="text" id="client-name" placeholder="Inserisci il nome del cliente">
+    </div> 
+    <div class="checkbox-group">
         <label>
-            <input type="checkbox" id="tachographSolution">
+            <input type="checkbox" id="tachographSolution" onchange="toggleDropdown('categorySelection')">
             Soluzione Tachigrafo
         </label>
-        <div id="categorySelection" style="margin-left: 20px; display: none;">
+        <div id="categorySelection" class="dropdown-menu">
             <label>
                 <input type="checkbox" class="categoryCheckbox" value="motrice">
                 Motrice (incluso Trattore)
-            </label><br>
+            </label>
             <label>
                 <input type="checkbox" class="categoryCheckbox" value="veicolo">
                 Veicolo
-            </label><br>
+            </label>
             <label>
                 <input type="checkbox" class="categoryCheckbox" value="furgone">
                 Furgone
             </label>
         </div>
-    </div>  
-    <div>
+    </div>
+    <div class="checkbox-group">
         <label>
-            <input type="checkbox" id="driverIdentificationSolution">
+            <input type="checkbox" id="driverIdentificationSolution" onchange="toggleDropdown('driverCategorySelection')">
             Driver Identification Standalone (With Driver Tag)
         </label>
-        <div id="driverCategorySelection" style="margin-left: 20px; display: none;">
+        <div id="driverCategorySelection" class="dropdown-menu">
             <label>
                 <input type="checkbox" class="driverCategoryCheckbox" value="motrice">
                 Motrice (incluso Trattore)
-            </label><br>
+            </label>
             <label>
                 <input type="checkbox" class="driverCategoryCheckbox" value="veicolo">
                 Veicolo
-            </label><br>
+            </label>
             <label>
                 <input type="checkbox" class="driverCategoryCheckbox" value="furgone">
                 Furgone
             </label>
         </div>
     </div>
-    <div>
+    <div class="checkbox-group">
         <label>
-            <input type="checkbox" id="engineLockSolution">
+            <input type="checkbox" id="engineLockSolution" onchange="toggleDropdown('engineLockCategorySelection')">
             Driver Identification (With Driver Tag) + Engine Lock (è necessario fleggare anche STANDALONE)
         </label>
-        <div id="engineLockCategorySelection" style="margin-left: 20px; display: none;">
+        <div id="engineLockCategorySelection" class="dropdown-menu">
             <label>
                 <input type="checkbox" class="engineLockCategoryCheckbox" value="motrice">
                 Motrice (incluso Trattore)
-            </label><br>
+            </label>
             <label>
                 <input type="checkbox" class="engineLockCategoryCheckbox" value="veicolo">
                 Veicolo
-            </label><br>
+            </label>
             <label>
                 <input type="checkbox" class="engineLockCategoryCheckbox" value="furgone">
                 Furgone
             </label>
         </div>
-    </div> 
-    <div>
-        <label for="client-name" id="client-name-label">Nome Cliente:</label>
-        <input type="text" id="client-name" placeholder="Inserisci il nome del cliente">
-    </div>     
+    </div>
+    
+    <p>1. Il file principale viene caricato automaticamente all'avvio.</p>
+    <p>2. Carica il file dei veicoli da verificare:</p>
+    <div class="file-upload-wrapper">
+        <label class="file-upload-button" for="fileInput">Scegli File</label>
+        <input id="fileInput" type="file" accept=".xlsx" onchange="caricaFileVerifica(event)">
+    </div>
     <button onclick="verificaCompatibilita()">Verifica Compatibilità</button>
+    <p>Oppure:</p>
+    <p>3. Inserisci i veicili di seguito:</p>
+
+    <div class="vehicle-selection">
+        <h2>Seleziona Veicoli per il Check</h2>
+        <div id="vehicleInputs">
+            <div class="vehicle-row">
+                <label for="make1">Marca:</label>
+                <input type="text" id="make1" placeholder="Inserisci Marca">
+                <label for="model1">Modello:</label>
+                <input type="text" id="model1" placeholder="Inserisci Modello">
+                <label for="year1">Anno:</label>
+                <input type="number" id="year1" placeholder="Inserisci Anno">
+                <button type="button" class="add-row" onclick="aggiungiVeicolo()">+</button>
+            </div>
+        </div>
+        <button onclick="verificaVeicoliSelezionati()">Verifica Veicoli</button>
+    </div>
+    
+        
     <p>Dopo la verifica, il file dei risultati sarà scaricato automaticamente.</p>
 </body>
 </html>
